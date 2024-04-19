@@ -210,7 +210,7 @@ def sigmoid(x):
 
 def select_arm():
     
-    cur.execute("SELECT max_prev, k_var, l, f, epsilon, total_iterations_forK FROM aeg_variables where id=1")
+    cur.execute("SELECT max_prev, k_var, l, f, epsilon, total_iterations_fork FROM aeg_variables where id=1")
     row = cur.fetchone()
     
     num_arms = 10
@@ -238,7 +238,7 @@ def select_arm():
                     max_prev = max_curr
                     
                     total_iterations_forK += 1
-                    cur.execute("UPDATE aeg_variables SET total_iterations_forK = %s where id=1", (total_iterations_forK,))
+                    cur.execute("UPDATE aeg_variables SET total_iterations_fork = %s where id=1", (total_iterations_forK,))
                     k_var = 0            
                     
                     cur.execute("UPDATE aeg_variables SET max_prev = %s, k_var = %s, epsilon = %s WHERE id=1", (max_prev,k_var, epsilon, ))
@@ -325,7 +325,7 @@ def click_lm(lm_title):
     if update_count > 1:
         # Render the learning material description page without updating the database
         return render_template('material.html', description=description)
-    # Update the armsreward table with the arm_id
+    # Update the  table with the arm_id
     cur.execute("SELECT arm_id FROM armsrewardaeg WHERE lm_title = %s", (lm_title,))
     row = cur.fetchone()
     arm_id_r = row[0] if row else None
