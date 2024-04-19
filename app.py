@@ -214,7 +214,7 @@ def select_arm():
     row = cur.fetchone()
     
     num_arms = 10
-    max_prev, k_var, l, f, epsilon, total_iterations_forK = row
+    max_prev, k_var, l, f, epsilon, total_iterations_fork = row
     
     if np.random.normal(0,1) <= epsilon:
             
@@ -237,13 +237,11 @@ def select_arm():
                         
                     max_prev = max_curr
                     
-                    total_iterations_forK += 1
-                    cur.execute("UPDATE aeg_variables SET total_iterations_fork = %s where id=1", (total_iterations_forK,))
+                    total_iterations_fork += 1
                     k_var = 0            
-                    
-                    cur.execute("UPDATE aeg_variables SET max_prev = %s, k_var = %s, epsilon = %s WHERE id=1", (max_prev,k_var, epsilon, ))
+                    cur.execute("UPDATE aeg_variables SET max_prev = %s, k_var = %s, epsilon = %s, total_iterations_fork = %s WHERE id=1", (max_prev,k_var, epsilon, total_iterations_fork, ))
 
-            randomArm = random.randint(1, num_arms)  # Select a random arm from 1 to 20
+            randomArm = random.randint(1, num_arms)  
             arm_id = randomArm if row else None
 
     else:
@@ -253,6 +251,48 @@ def select_arm():
     
     return arm_id
 
+def select_arm():
+    
+    cur.execute("SELECT max_prev, k_var, l, f, epsilon FROM aeg_variables where id=1")
+    row = cur.fetchone()
+    
+    num_arms = 10
+    max_prev, k_var, l, f, epsilon = row
+    
+    if np.random.normal(0,1) <= epsilon:
+            
+            cur.execute("SELECT average_reward FROM armsreward ORDER BY average_reward DESC LIMIT 1")
+            
+            max_curr = cur.fetchone()[0]
+                    
+            k_var += 1
+        
+            cur.execute("UPDATE aeg_variables SET k_var = %s where id=1", (k_var,))
+                
+            if k_var == l:
+                
+                    delta = (max_curr - max_prev) * f
+
+                    if delta > 0:
+                        epsilon = sigmoid(delta)
+                    else:
+                        if delta < 0 :
+                            epsilon = 0.5
+                        
+                    max_prev = max_curr
+                    k_var = 0            
+                    
+                    cur.execute("UPDATE aeg_variables SET max_prev = %s, k_var = %s, epsilon = %s WHERE id=1", (max_prev,k_var, epsilon, ))
+
+            randomArm = random.randint(1, num_arms)  # Select a random arm from 1 to 20
+            arm_id = randomArm if row else None
+
+    else:
+        cur.execute("SELECT arm_id FROM armsreward ORDER BY average_reward DESC LIMIT 1")
+        row = cur.fetchone()
+        arm_id = row[0] if row else None
+    
+    return arm_id
 @app.route('/', methods=['GET', 'POST'])
 def index():
     no_results_message = ""
@@ -325,7 +365,7 @@ def click_lm(lm_title):
     if update_count > 1:
         # Render the learning material description page without updating the database
         return render_template('material.html', description=description)
-    # Update the  table with the arm_id
+    # Update the armsreward table with the arm_id
     cur.execute("SELECT arm_id FROM armsrewardaeg WHERE lm_title = %s", (lm_title,))
     row = cur.fetchone()
     arm_id_r = row[0] if row else None
