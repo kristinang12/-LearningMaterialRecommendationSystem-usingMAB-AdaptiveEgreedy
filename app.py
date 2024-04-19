@@ -251,48 +251,6 @@ def select_arm():
     
     return arm_id
 
-def select_arm():
-    
-    cur.execute("SELECT max_prev, k_var, l, f, epsilon FROM aeg_variables where id=1")
-    row = cur.fetchone()
-    
-    num_arms = 10
-    max_prev, k_var, l, f, epsilon = row
-    
-    if np.random.normal(0,1) <= epsilon:
-            
-            cur.execute("SELECT average_reward FROM armsreward ORDER BY average_reward DESC LIMIT 1")
-            
-            max_curr = cur.fetchone()[0]
-                    
-            k_var += 1
-        
-            cur.execute("UPDATE aeg_variables SET k_var = %s where id=1", (k_var,))
-                
-            if k_var == l:
-                
-                    delta = (max_curr - max_prev) * f
-
-                    if delta > 0:
-                        epsilon = sigmoid(delta)
-                    else:
-                        if delta < 0 :
-                            epsilon = 0.5
-                        
-                    max_prev = max_curr
-                    k_var = 0            
-                    
-                    cur.execute("UPDATE aeg_variables SET max_prev = %s, k_var = %s, epsilon = %s WHERE id=1", (max_prev,k_var, epsilon, ))
-
-            randomArm = random.randint(1, num_arms)  # Select a random arm from 1 to 20
-            arm_id = randomArm if row else None
-
-    else:
-        cur.execute("SELECT arm_id FROM armsreward ORDER BY average_reward DESC LIMIT 1")
-        row = cur.fetchone()
-        arm_id = row[0] if row else None
-    
-    return arm_id
 @app.route('/', methods=['GET', 'POST'])
 def index():
     no_results_message = ""
